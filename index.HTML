@@ -1,0 +1,2510 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlagRush - Tebak Negara</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      overflow-x: hidden;
+      background: #020617;
+      color: white;
+      min-height: 100vh;
+    }
+
+    /* Screen Management */
+    .screen {
+      display: none;
+      min-height: 100vh;
+      width: 100%;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Common Background for All Screens */
+    .bg-ambient {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -3;
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    }
+
+    /* Custom subtle particle lines behind elements */
+    .decor-grid {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* Neon Glows */
+    .glow-orange {
+      position: fixed;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: rgba(249, 115, 22, 0.12);
+      filter: blur(120px);
+      top: -100px;
+      right: -100px;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .glow-blue {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: rgba(14, 165, 233, 0.15);
+      filter: blur(140px);
+      bottom: -150px;
+      left: -150px;
+      z-index: -1;
+      pointer-events: none;
+      animation: floatGlow 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatGlow {
+      from { transform: translateY(-30px) scale(0.9); }
+      to { transform: translateY(30px) scale(1.1); }
+    }
+
+    /* LANDING SCREEN SPECIFIC */
+    .landing {
+      padding: 40px 20px;
+    }
+
+    .logo-container {
+      position: relative;
+      margin-bottom: 25px;
+      animation: floatLogo 4s ease-in-out infinite;
+    }
+
+    /* Custom CSS-constructed dynamic flag shield logo as fallback */
+    .logo-shield {
+      width: 130px;
+      height: 150px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border-radius: 10% 10% 50% 50%;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(6, 182, 212, 0.4), inset 0 0 20px rgba(255,255,255,0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 4px solid #ffffff;
+    }
+
+    .logo-shield::before {
+      content: '⚡';
+      font-size: 70px;
+      color: #fbbf24;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    @keyframes floatLogo {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(2deg); }
+    }
+
+    .title {
+      font-size: 60px;
+      font-weight: 800;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #ffffff 40%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: #cbd5e1;
+      margin-bottom: 35px;
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .subtitle span {
+      color: #38bdf8;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+
+    /* Play Button */
+    .play-btn {
+      padding: 18px 65px;
+      border: none;
+      border-radius: 50px;
+      font-size: 26px;
+      font-weight: 700;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(90deg, #2563eb, #06b6d4);
+      box-shadow: 0 0 25px #0ea5e9, 0 0 50px rgba(14, 165, 233, 0.4);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      margin-bottom: 45px;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 35px #38bdf8, 0 0 70px rgba(56, 189, 248, 0.7);
+    }
+
+    .play-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Menu Cards */
+    .menu-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 1100px;
+      padding: 0 20px;
+    }
+
+    .card {
+      width: 200px;
+      height: 160px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      border-color: #38bdf8;
+      background: rgba(15, 23, 42, 0.85);
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3);
+    }
+
+    .card:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+
+    .card h2 {
+      margin-top: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .card p {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #94a3b8;
+      text-align: center;
+      padding: 0 12px;
+      line-height: 1.3;
+    }
+
+    .emoji {
+      font-size: 45px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+      transition: transform 0.3s;
+    }
+
+    .card:hover .emoji {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    /* HEADERS & NAVIGATION */
+    .screen-header {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    .back-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    .screen-title {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+    }
+
+    /* GAME PLAY SCREEN */
+    .game-layout {
+      width: 100%;
+      max-width: 650px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 20px 40px 20px;
+    }
+
+    .stat-row {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 20px;
+      border-radius: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .timer-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      height: 8px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .timer-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #3b82f6, #06b6d4);
+      border-radius: 10px;
+      transition: width 0.1s linear;
+    }
+
+    .timer-bar.warning {
+      background: linear-gradient(90deg, #ef4444, #f97316);
+      animation: pulseAlert 0.5s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.3); }
+    }
+
+    /* Flag Display Frame */
+    .flag-card {
+      width: 100%;
+      aspect-ratio: 1.6 / 1;
+      background: rgba(30, 41, 59, 0.8);
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .flag-card.shake {
+      animation: shakeErr 0.4s ease-in-out;
+    }
+
+    @keyframes shakeErr {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+
+    .flag-card.pop-correct {
+      animation: popCorr 0.4s ease-out;
+    }
+
+    @keyframes popCorr {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); border-color: #10b981; }
+      100% { transform: scale(1); }
+    }
+
+    /* Direct pure CSS flag renderings as scalable SVG blocks */
+    .flag-render {
+      width: 80%;
+      height: 70%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #475569;
+      display: flex;
+    }
+
+    /* Multiple Options Buttons Grid */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .option-btn {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 18px 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 64px;
+    }
+
+    .option-btn:hover {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+    }
+
+    .option-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* Correct/Incorrect Classes added via JS */
+    .option-btn.correct {
+      background: #065f46 !important;
+      border-color: #34d399 !important;
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+      color: #a7f3d0;
+    }
+
+    .option-btn.incorrect {
+      background: #7f1d1d !important;
+      border-color: #f87171 !important;
+      box-shadow: 0 0 20px rgba(248, 113, 113, 0.4);
+      color: #fca5a5;
+    }
+
+    .option-btn.disabled {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* CONTINENT SELECTION SCREEN */
+    .continent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+      padding: 20px;
+    }
+
+    .continent-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .continent-card:hover {
+      transform: translateY(-4px);
+      border-color: #818cf8;
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 8px 20px rgba(129, 140, 248, 0.2);
+    }
+
+    .continent-icon {
+      font-size: 38px;
+    }
+
+    .continent-info h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .continent-info p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    /* LEADERBOARD (RANKING) SCREEN */
+    .ranking-container {
+      width: 100%;
+      max-width: 550px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      margin: 20px;
+    }
+
+    .rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-radius: 16px;
+      margin-bottom: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      transition: transform 0.2s;
+    }
+
+    .rank-item:hover {
+      transform: scale(1.01);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .rank-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .rank-number {
+      font-size: 18px;
+      font-weight: 700;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+    }
+
+    .rank-number.gold { background: #fbbf24; color: #1e293b; }
+    .rank-number.silver { background: #cbd5e1; color: #1e293b; }
+    .rank-number.bronze { background: #b45309; color: #ffffff; }
+    .rank-number.other { background: rgba(255, 255, 255, 0.1); color: #94a3b8; }
+
+    .rank-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .rank-meta {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .rank-right {
+      text-align: right;
+    }
+
+    .rank-score {
+      font-size: 18px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    .rank-empty {
+      text-align: center;
+      padding: 40px 0;
+      color: #64748b;
+    }
+
+    /* BADGES (KOLEKSI) SCREEN */
+    .collection-header-summary {
+      background: rgba(255,255,255,0.04);
+      padding: 15px 30px;
+      border-radius: 50px;
+      margin-bottom: 25px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 900px;
+      padding: 20px;
+    }
+
+    .badge-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 16px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .badge-card.locked {
+      opacity: 0.4;
+      filter: grayscale(1);
+    }
+
+    .badge-card.unlocked {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(251, 191, 36, 0.4);
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.05);
+    }
+
+    .badge-flag {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .badge-name {
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+
+    .badge-status {
+      font-size: 9px;
+      margin-top: 4px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .badge-status.unlocked-txt {
+      color: #fbbf24;
+    }
+
+    .badge-status.locked-txt {
+      color: #64748b;
+    }
+
+    /* GAME OVER OVERLAY / MODAL SCREEN */
+    .gameover-container {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid rgba(56, 189, 248, 0.2);
+      border-radius: 30px;
+      padding: 40px 30px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      margin: 20px;
+      transform: scale(0.9);
+      opacity: 0;
+      animation: gameoverPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+    }
+
+    @keyframes gameoverPop {
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .gameover-emoji {
+      font-size: 70px;
+      margin-bottom: 15px;
+      animation: bounce 1.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .gameover-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #f87171, #ef4444);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gameover-score-card {
+      background: rgba(255,255,255,0.04);
+      border-radius: 20px;
+      padding: 20px;
+      margin: 25px 0;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .g-stat h4 {
+      font-size: 12px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .g-stat p {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .g-stat-score { color: #38bdf8; }
+    .g-stat-streak { color: #f59e0b; }
+    .g-stat-acc { color: #10b981; }
+
+    .highscore-alert {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px dashed rgba(251, 191, 36, 0.5);
+      padding: 10px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* Input Score Row */
+    .name-input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 25px;
+      text-align: left;
+    }
+
+    .name-input-row label {
+      font-size: 13px;
+      color: #94a3b8;
+      padding-left: 5px;
+    }
+
+    .name-input {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      padding: 14px 20px;
+      border-radius: 14px;
+      color: white;
+      font-size: 16px;
+      width: 100%;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .name-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .primary-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(90deg, #2563eb, #06b6d4);
+      transition: transform 0.2s, filter 0.2s;
+    }
+
+    .primary-btn:hover {
+      filter: brightness(1.15);
+    }
+
+    .secondary-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      background: transparent;
+      transition: all 0.2s;
+    }
+
+    .secondary-btn:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: #cbd5e1;
+    }
+
+    /* SETTINGS SCREEN */
+    .settings-container {
+      width: 100%;
+      max-width: 550px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      margin: 20px;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .setting-item:last-child {
+      border: none;
+    }
+
+    .setting-info h4 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .setting-info p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    /* Switch toggle styles */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #2563eb;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    .select-lang {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      padding: 8px 14px;
+      border-radius: 10px;
+      color: white;
+      outline: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Custom Dialog Toast Alert */
+    .toast-notif {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid #38bdf8;
+      box-shadow: 0 10px 30px rgba(56,189,248,0.25);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      z-index: 1000;
+      font-weight: 500;
+      font-size: 14px;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    .toast-notif.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* FOOTER */
+    .footer {
+      width: 100%;
+      text-align: center;
+      padding: 30px 20px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    /* RESPONSIVE LAYOUTS */
+    @media (max-width: 900px) {
+      .landing {
+        padding: 30px 15px;
+        justify-content: flex-start;
+      }
+
+      .logo-shield {
+        width: 100px;
+        height: 120px;
+      }
+
+      .logo-shield::before {
+        font-size: 55px;
+      }
+
+      .title {
+        font-size: 44px;
+      }
+
+      .subtitle {
+        font-size: 16px;
+        margin-bottom: 25px;
+      }
+
+      .play-btn {
+        font-size: 20px;
+        padding: 14px 45px;
+        margin-bottom: 35px;
+      }
+
+      .menu-container {
+        gap: 12px;
+      }
+
+      .card {
+        width: 45%;
+        max-width: 180px;
+        height: 140px;
+      }
+
+      .card h2 {
+        font-size: 15px;
+      }
+      
+      .card p {
+        font-size: 11px;
+      }
+
+      .options-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- FIXED DECORATIVE ELEMENTS -->
+  <div class="bg-ambient"></div>
+  <div class="decor-grid"></div>
+  <div class="glow-orange"></div>
+  <div class="glow-blue"></div>
+
+  <!-- 1. LANDING SCREEN -->
+  <section id="screen-landing" class="screen active landing">
+    
+    <!-- Shield Logo -->
+    <div class="logo-container">
+      <div class="logo-shield"></div>
+    </div>
+
+    <!-- Title -->
+    <h1 class="title">FLAG RUSH</h1>
+
+    <p class="subtitle" id="landing-subtitle">
+      Tebak negara dari bendera dalam <span id="time-highlight">20 detik</span>
+    </p>
+
+    <!-- Play Button -->
+    <button class="play-btn" id="main-play-btn">
+      ▶ MULAI BERMAIN
+    </button>
+
+    <!-- Menu Grid -->
+    <div class="menu-container">
+      <div class="card" id="card-mixed">
+        <div class="emoji">🌍</div>
+        <h2 id="menu-mixed-title">Campuran</h2>
+        <p id="menu-mixed-desc">Semua negara secara acak</p>
+      </div>
+
+      <div class="card" id="card-continent">
+        <div class="emoji">🌏</div>
+        <h2 id="menu-continent-title">Per Benua</h2>
+        <p id="menu-continent-desc">Main berdasarkan wilayah dunia</p>
+      </div>
+
+      <div class="card" id="card-rank">
+        <div class="emoji">🏆</div>
+        <h2 id="menu-rank-title">Ranking</h2>
+        <p id="menu-rank-desc">Lihat perolehan skor terbaik</p>
+      </div>
+
+      <div class="card" id="card-collection">
+        <div class="emoji">🎖️</div>
+        <h2 id="menu-collect-title">Koleksi</h2>
+        <p id="menu-collect-desc">Kumpulkan badge negara</p>
+      </div>
+
+      <div class="card" id="card-settings">
+        <div class="emoji">⚙️</div>
+        <h2 id="menu-set-title">Pengaturan</h2>
+        <p id="menu-set-desc">Konfigurasi suara dan bahasa</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      © 2026 FlagRush. All Rights Reserved.
+    </div>
+  </section>
+
+  <!-- 2. GAME SETUP / CONTINENT SCREEN -->
+  <section id="screen-continent" class="screen">
+    <div class="screen-header">
+      <button class="back-btn back-to-home">← Kembali</button>
+      <h2 class="screen-title" id="screen-title-continent">Pilih Wilayah</h2>
+      <div style="width: 80px;"></div>
+    </div>
+
+    <div class="continent-grid" id="continent-grid-container">
+      <!-- Generated dynamically in JS -->
+    </div>
+  </section>
+
+  <!-- 3. ACTIVE GAMEPLAY SCREEN -->
+  <section id="screen-game" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" id="exit-game-btn">✕ Keluar</button>
+      <div class="screen-title" style="font-size: 22px;" id="game-nav-mode">Gameplay</div>
+      <div style="width: 80px;"></div>
+    </div>
+
+    <div class="game-layout">
+      <!-- Statistics HUD -->
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-label" id="hud-score">Skor</div>
+          <div class="stat-value" id="hud-score-val">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" id="hud-question">Soal</div>
+          <div class="stat-value" id="hud-question-val">1/10</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label" id="hud-streak">Streak</div>
+          <div class="stat-value" id="hud-streak-val">0🔥</div>
+        </div>
+      </div>
+
+      <!-- Live progress timer bar -->
+      <div class="timer-container">
+        <div class="timer-bar" id="game-timer-bar"></div>
+      </div>
+
+      <!-- Current Flag Frame -->
+      <div class="flag-card" id="main-flag-container">
+        <svg class="flag-render" id="flag-svg-view" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+          <!-- Dynamically populated SVG nodes of the selected flag -->
+        </svg>
+      </div>
+
+      <!-- Multiple Choice Options -->
+      <div class="options-grid" id="answers-grid">
+        <!-- Generates 4 button options dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. LEADERBOARD / RANKING SCREEN -->
+  <section id="screen-ranking" class="screen">
+    <div class="screen-header">
+      <button class="back-btn back-to-home">← Kembali</button>
+      <h2 class="screen-title" id="rank-title">Papan Peringkat</h2>
+      <button class="back-btn" id="clear-leaderboard-btn">Reset</button>
+    </div>
+
+    <div class="ranking-container">
+      <div id="leaderboard-list">
+        <!-- Render rank slots via JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. BADGE COLLECTIONS SCREEN -->
+  <section id="screen-collection" class="screen">
+    <div class="screen-header">
+      <button class="back-btn back-to-home">← Kembali</button>
+      <h2 class="screen-title" id="collect-title">Koleksi Badge</h2>
+      <div style="width: 80px;"></div>
+    </div>
+
+    <div class="collection-header-summary" id="badge-ratio-text">
+      Terbuka: 0 / 24 Badge Negara
+    </div>
+
+    <div class="badge-grid" id="badges-grid-container">
+      <!-- Badges generated dynamically -->
+    </div>
+  </section>
+
+  <!-- 6. SETTINGS CONFIGURATION SCREEN -->
+  <section id="screen-settings" class="screen">
+    <div class="screen-header">
+      <button class="back-btn back-to-home">← Kembali</button>
+      <h2 class="screen-title" id="set-screen-title">Pengaturan</h2>
+      <div style="width: 80px;"></div>
+    </div>
+
+    <div class="settings-container">
+      <div class="setting-item">
+        <div class="setting-info">
+          <h4 id="set-sound-lbl">Efek Suara (SFX)</h4>
+          <p id="set-sound-desc">Mainkan feedback retro waktu bermain</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-sfx" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <h4 id="set-lang-lbl">Bahasa Utama</h4>
+          <p id="set-lang-desc">Pilih pelabelan nama negara</p>
+        </div>
+        <select class="select-lang" id="select-game-language">
+          <option value="id" selected>Bahasa Indonesia</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <div class="setting-item" style="border: none; padding-top: 25px;">
+        <button class="primary-btn" id="reset-progress-btn" style="background: #dc2626; width: 100%;">
+          Reset Semua Progress Game
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. GAME OVER COMPLETED MODAL OVERLAY -->
+  <section id="screen-gameover" class="screen">
+    <div class="gameover-container">
+      <div class="gameover-emoji" id="gameover-emoji">🏆</div>
+      <h2 class="gameover-title" id="gameover-title-text">Sesi Selesai!</h2>
+      <p style="color: #94a3b8;" id="gameover-subtitle">Anda menyelesaikan petualangan geografi ini</p>
+
+      <div class="gameover-score-card">
+        <div class="g-stat">
+          <h4 id="go-score">Skor</h4>
+          <p class="g-stat-score" id="go-score-val">0</p>
+        </div>
+        <div class="g-stat">
+          <h4 id="go-streak">Streak Terbaik</h4>
+          <p class="g-stat-streak" id="go-streak-val">0</p>
+        </div>
+        <div class="g-stat">
+          <h4 id="go-acc">Akurasi</h4>
+          <p class="g-stat-acc" id="go-acc-val">0%</p>
+        </div>
+      </div>
+
+      <div class="highscore-alert" id="new-highscore-badge" style="display: none;">
+        ✨ REKOR BARU! SKOR TERTINGGI KAMU! ✨
+      </div>
+
+      <!-- Record name row for Leaderboard -->
+      <div class="name-input-row">
+        <label for="player-name-field" id="label-name-input">Masukkan Nama Anda untuk Papan Peringkat:</label>
+        <input type="text" id="player-name-field" class="name-input" maxlength="15" value="Pemain">
+      </div>
+
+      <div class="btn-group">
+        <button class="primary-btn" id="go-save-btn">Simpan & Selesai</button>
+        <button class="secondary-btn" id="go-retry-btn">Main Lagi</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CUSTOM FLOATING TOAST -->
+  <div class="toast-notif" id="global-toast">Feedback alert</div>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    // --- 1. LOCALIZED DICTIONARIES ---
+    const i18n = {
+      id: {
+        subtitle: "Tebak negara dari bendera dalam <span>20 detik</span>",
+        playBtn: "▶ MULAI BERMAIN",
+        mixedTitle: "Campuran",
+        mixedDesc: "Semua negara secara acak",
+        contTitle: "Per Benua",
+        contDesc: "Main berdasarkan wilayah dunia",
+        rankTitle: "Ranking",
+        rankDesc: "Lihat perolehan skor terbaik",
+        collectTitle: "Koleksi",
+        collectDesc: "Kumpulkan badge negara",
+        setTitle: "Pengaturan",
+        setDesc: "Konfigurasi suara dan bahasa",
+        hudScore: "Skor",
+        hudQuest: "Soal",
+        hudStreak: "Streak",
+        secTime: "20 detik",
+        pilihWilayah: "Pilih Wilayah",
+        papanPeringkat: "Papan Peringkat",
+        koleksiBadge: "Koleksi Badge",
+        badgeUnlocked: "Terbuka",
+        badgeRatio: "Terbuka: {unlocked} / {total} Badge Negara",
+        setSound: "Efek Suara (SFX)",
+        setSoundDesc: "Mainkan feedback retro waktu bermain",
+        setLang: "Bahasa Utama",
+        setLangDesc: "Pilih pelabelan nama negara",
+        resetProg: "Reset Semua Progress Game",
+        goTitle: "Sesi Selesai!",
+        goSub: "Anda menyelesaikan petualangan geografi ini",
+        goSave: "Simpan & Selesai",
+        goRetry: "Main Lagi",
+        labelName: "Masukkan Nama Anda untuk Papan Peringkat:",
+        noRank: "Belum ada skor yang tercatat. Jadilah yang pertama!",
+        notifReset: "Semua progress game telah di-reset!",
+        notifSaved: "Skor berhasil disimpan!",
+        notifNoName: "Silakan masukkan nama Anda!",
+        exitConfirm: "Keluar sekarang? Skor saat ini tidak akan disimpan.",
+        conEurope: "Eropa",
+        conAsia: "Asia",
+        conAmerica: "Amerika",
+        conAfrica: "Afrika/Lainnya",
+        badgeStatusUnlock: "Ditemukan",
+        badgeStatusLock: "Terkunci"
+      },
+      en: {
+        subtitle: "Guess the country from the flag in <span>20 seconds</span>",
+        playBtn: "▶ START PLAYING",
+        mixedTitle: "Mixed",
+        mixedDesc: "All world countries randomly",
+        contTitle: "Continents",
+        contDesc: "Play by region of the world",
+        rankTitle: "Ranking",
+        rankDesc: "See the highest record scores",
+        collectTitle: "Collections",
+        collectDesc: "Unlock global country badges",
+        setTitle: "Settings",
+        setDesc: "Configure sound and language",
+        hudScore: "Score",
+        hudQuest: "Question",
+        hudStreak: "Streak",
+        secTime: "20 seconds",
+        pilihWilayah: "Choose Continent",
+        papanPeringkat: "Leaderboard",
+        koleksiBadge: "Badge Collection",
+        badgeUnlocked: "Unlocked",
+        badgeRatio: "Unlocked: {unlocked} / {total} Country Badges",
+        setSound: "Sound Effects (SFX)",
+        setSoundDesc: "Play retro gameplay synth sounds",
+        setLang: "Primary Language",
+        setLangDesc: "Choose displayed country labels",
+        resetProg: "Reset All Game Progress",
+        goTitle: "Game Completed!",
+        goSub: "You finished this geographical quest",
+        goSave: "Save & Finish",
+        goRetry: "Play Again",
+        labelName: "Enter Your Name for the Leaderboard:",
+        noRank: "No scores registered yet. Be the first!",
+        notifReset: "All game progress has been reset!",
+        notifSaved: "Score saved successfully!",
+        notifNoName: "Please enter your name!",
+        exitConfirm: "Exit now? Your active progress will be lost.",
+        conEurope: "Europe",
+        conAsia: "Asia",
+        conAmerica: "America",
+        conAfrica: "Africa/Others",
+        badgeStatusUnlock: "Discovered",
+        badgeStatusLock: "Locked"
+      }
+    };
+
+    // --- 2. VECTOR-BASED COUNTRY FLAG DATABASE ---
+    // Beautiful, lightweight procedural SVGs for reliable offline dynamic rendering
+    const FLAGS_DB = [
+      // EUROPE
+      {
+        id: "id_indonesia",
+        code: "ID",
+        name_id: "Indonesia",
+        name_en: "Indonesia",
+        continent: "asia",
+        emoji: "🇮🇩",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="200" fill="#E1200F"/>
+            <rect y="200" width="600" height="200" fill="#FFFFFF"/>
+          `;
+        }
+      },
+      {
+        id: "id_japan",
+        code: "JP",
+        name_id: "Jepang",
+        name_en: "Japan",
+        continent: "asia",
+        emoji: "🇯🇵",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="400" fill="#FFFFFF"/>
+            <circle cx="300" cy="200" r="120" fill="#BC002D"/>
+          `;
+        }
+      },
+      {
+        id: "id_france",
+        code: "FR",
+        name_id: "Prancis",
+        name_en: "France",
+        continent: "europe",
+        emoji: "🇫🇷",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="200" height="400" fill="#002395"/>
+            <rect x="200" width="200" height="400" fill="#FFFFFF"/>
+            <rect x="400" width="200" height="400" fill="#ED2939"/>
+          `;
+        }
+      },
+      {
+        id: "id_germany",
+        code: "DE",
+        name_id: "Jerman",
+        name_en: "Germany",
+        continent: "europe",
+        emoji: "🇩🇪",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="133.3" fill="#000000"/>
+            <rect y="133.3" width="600" height="133.3" fill="#FF0000"/>
+            <rect y="266.6" width="600" height="133.4" fill="#FFCC00"/>
+          `;
+        }
+      },
+      {
+        id: "id_italy",
+        code: "IT",
+        name_id: "Italia",
+        name_en: "Italy",
+        continent: "europe",
+        emoji: "🇮🇹",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="200" height="400" fill="#009246"/>
+            <rect x="200" width="200" height="400" fill="#F1F2F1"/>
+            <rect x="400" width="200" height="400" fill="#CE2B37"/>
+          `;
+        }
+      },
+      {
+        id: "id_netherlands",
+        code: "NL",
+        name_id: "Belanda",
+        name_en: "Netherlands",
+        continent: "europe",
+        emoji: "🇳🇱",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="133.3" fill="#AE1C28"/>
+            <rect y="133.3" width="600" height="133.3" fill="#FFFFFF"/>
+            <rect y="266.6" width="600" height="133.4" fill="#21468B"/>
+          `;
+        }
+      },
+      {
+        id: "id_belgium",
+        code: "BE",
+        name_id: "Belgia",
+        name_en: "Belgium",
+        continent: "europe",
+        emoji: "🇧🇪",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="200" height="400" fill="#000000"/>
+            <rect x="200" width="200" height="400" fill="#FDDA24"/>
+            <rect x="400" width="200" height="400" fill="#EF3340"/>
+          `;
+        }
+      },
+      {
+        id: "id_austria",
+        code: "AT",
+        name_id: "Austria",
+        name_en: "Austria",
+        continent: "europe",
+        emoji: "🇦🇹",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="133.3" fill="#C8102E"/>
+            <rect y="133.3" width="600" height="133.3" fill="#FFFFFF"/>
+            <rect y="266.6" width="600" height="133.4" fill="#C8102E"/>
+          `;
+        }
+      },
+      {
+        id: "id_ukraine",
+        code: "UA",
+        name_id: "Ukraina",
+        name_en: "Ukraine",
+        continent: "europe",
+        emoji: "🇺🇦",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="200" fill="#0057B7"/>
+            <rect y="200" width="600" height="200" fill="#FFD700"/>
+          `;
+        }
+      },
+      // ASIA
+      {
+        id: "id_korea_south",
+        code: "KR",
+        name_id: "Korea Selatan",
+        name_en: "South Korea",
+        continent: "asia",
+        emoji: "🇰🇷",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="400" fill="#FFFFFF"/>
+            <circle cx="300" cy="200" r="80" fill="#CD2E3A"/>
+            <path d="M 300 200 A 40 40 0 0 1 300 120 A 40 40 0 0 1 300 200" fill="#0047A0"/>
+            <path d="M 300 200 A 40 40 0 0 0 300 280 A 40 40 0 0 0 300 200" fill="#CD2E3A"/>
+            <!-- Simplified basic diagonal black lines for rendering distinctness -->
+            <line x1="120" y1="80" x2="180" y2="120" stroke="#000" stroke-width="12"/>
+            <line x1="420" y1="80" x2="480" y2="120" stroke="#000" stroke-width="12"/>
+            <line x1="120" y1="320" x2="180" y2="280" stroke="#000" stroke-width="12"/>
+            <line x1="420" y1="320" x2="480" y2="280" stroke="#000" stroke-width="12"/>
+          `;
+        }
+      },
+      {
+        id: "id_vietnam",
+        code: "VN",
+        name_id: "Vietnam",
+        name_en: "Vietnam",
+        continent: "asia",
+        emoji: "🇻🇳",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="400" fill="#DA251D"/>
+            <!-- Centered Star -->
+            <polygon points="300,90 327,175 417,175 344,228 372,313 300,260 228,313 256,228 183,175 273,175" fill="#FFFF00"/>
+          `;
+        }
+      },
+      {
+        id: "id_china",
+        code: "CN",
+        name_id: "Tiongkok",
+        name_en: "China",
+        continent: "asia",
+        emoji: "🇨🇳",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="400" fill="#EE1C25"/>
+            <!-- Large Star -->
+            <polygon points="100,50 110,80 140,80 115,100 125,130 100,110 75,130 85,100 60,80 90,80" fill="#FFFF00"/>
+            <!-- Smaller guiding decoration star -->
+            <polygon points="170,40 173,50 183,50 175,56 178,66 170,60 162,66 165,56 157,50 167,50" fill="#FFFF00"/>
+            <polygon points="200,70 203,80 213,80 205,86 208,96 200,90 192,96 195,86 187,80 197,80" fill="#FFFF00"/>
+          `;
+        }
+      },
+      {
+        id: "id_thailand",
+        code: "TH",
+        name_id: "Thailand",
+        name_en: "Thailand",
+        continent: "asia",
+        emoji: "🇹🇭",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="66.6" fill="#A51931"/>
+            <rect y="66.6" width="600" height="66.6" fill="#F4F5F8"/>
+            <rect y="133.2" width="600" height="133.4" fill="#2D2A4A"/>
+            <rect y="266.6" width="600" height="66.6" fill="#F4F5F8"/>
+            <rect y="333.2" width="600" height="66.8" fill="#A51931"/>
+          `;
+        }
+      },
+      {
+        id: "id_singapore",
+        code: "SG",
+        name_id: "Singapura",
+        name_en: "Singapore",
+        continent: "asia",
+        emoji: "🇸🇬",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="200" fill="#ED2939"/>
+            <rect y="200" width="600" height="200" fill="#FFFFFF"/>
+            <!-- Moon & Stars simplified representation -->
+            <circle cx="90" cy="100" r="45" fill="#FFFFFF"/>
+            <circle cx="105" cy="100" r="45" fill="#ED2939"/>
+            <!-- Small Star dots -->
+            <circle cx="85" cy="80" r="5" fill="#FFFFFF"/>
+            <circle cx="105" cy="80" r="5" fill="#FFFFFF"/>
+            <circle cx="115" cy="98" r="5" fill="#FFFFFF"/>
+            <circle cx="95" cy="115" r="5" fill="#FFFFFF"/>
+            <circle cx="75" cy="98" r="5" fill="#FFFFFF"/>
+          `;
+        }
+      },
+      {
+        id: "id_india",
+        code: "IN",
+        name_id: "India",
+        name_en: "India",
+        continent: "asia",
+        emoji: "🇮🇳",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="133.3" fill="#FF9933"/>
+            <rect y="133.3" width="600" height="133.3" fill="#FFFFFF"/>
+            <rect y="266.6" width="600" height="133.4" fill="#138808"/>
+            <!-- Ashoka Chakra wheel -->
+            <circle cx="300" cy="200" r="45" stroke="#000080" stroke-width="4" fill="none"/>
+            <circle cx="300" cy="200" r="8" fill="#000080"/>
+            <line x1="300" y1="155" x2="300" y2="245" stroke="#000080" stroke-width="2"/>
+            <line x1="255" y1="200" x2="345" y2="200" stroke="#000080" stroke-width="2"/>
+          `;
+        }
+      },
+      // AMERICA
+      {
+        id: "id_canada",
+        code: "CA",
+        name_id: "Kanada",
+        name_en: "Canada",
+        continent: "america",
+        emoji: "🇨🇦",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="150" height="400" fill="#FF0000"/>
+            <rect x="150" width="300" height="400" fill="#FFFFFF"/>
+            <rect x="450" width="150" height="400" fill="#FF0000"/>
+            <!-- Stylized Red Maple Leaf center node representation -->
+            <polygon points="300,100 320,150 360,140 340,180 380,210 330,220 340,280 320,280 300,240 280,280 260,280 270,220 220,210 260,180 240,140 280,150" fill="#FF0000"/>
+          `;
+        }
+      },
+      {
+        id: "id_usa",
+        code: "US",
+        name_id: "Amerika Serikat",
+        name_en: "United States",
+        continent: "america",
+        emoji: "🇺🇸",
+        render: (svg) => {
+          // 13 Stripes
+          let stripes = '';
+          for (let i = 0; i < 13; i++) {
+            stripes += `<rect y="${i * (400/13)}" width="600" height="${400/13}" fill="${i % 2 === 0 ? '#B22234' : '#FFFFFF'}"/>`;
+          }
+          svg.innerHTML = stripes + `
+            <!-- Blue Canton -->
+            <rect width="250" height="215" fill="#3C3B6E"/>
+            <!-- Star grid simulation -->
+            <circle cx="40" cy="40" r="6" fill="#FFFFFF"/>
+            <circle cx="90" cy="40" r="6" fill="#FFFFFF"/>
+            <circle cx="140" cy="40" r="6" fill="#FFFFFF"/>
+            <circle cx="190" cy="40" r="6" fill="#FFFFFF"/>
+            <circle cx="65" cy="90" r="6" fill="#FFFFFF"/>
+            <circle cx="115" cy="90" r="6" fill="#FFFFFF"/>
+            <circle cx="165" cy="90" r="6" fill="#FFFFFF"/>
+            <circle cx="40" cy="140" r="6" fill="#FFFFFF"/>
+            <circle cx="90" cy="140" r="6" fill="#FFFFFF"/>
+            <circle cx="140" cy="140" r="6" fill="#FFFFFF"/>
+            <circle cx="190" cy="140" r="6" fill="#FFFFFF"/>
+            <circle cx="115" cy="180" r="6" fill="#FFFFFF"/>
+          `;
+        }
+      },
+      {
+        id: "id_brazil",
+        code: "BR",
+        name_id: "Brasil",
+        name_en: "Brazil",
+        continent: "america",
+        emoji: "🇧🇷",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="400" fill="#009739"/>
+            <polygon points="300,40 540,200 300,360 60,200" fill="#FEDF00"/>
+            <circle cx="300" cy="200" r="75" fill="#002776"/>
+            <path d="M 225 200 Q 300 160 375 200" stroke="#FFFFFF" stroke-width="12" fill="none"/>
+          `;
+        }
+      },
+      {
+        id: "id_argentina",
+        code: "AR",
+        name_id: "Argentina",
+        name_en: "Argentina",
+        continent: "america",
+        emoji: "🇦🇷",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="133.3" fill="#75AADB"/>
+            <rect y="133.3" width="600" height="133.3" fill="#FFFFFF"/>
+            <rect y="266.6" width="600" height="133.4" fill="#75AADB"/>
+            <!-- Sun of May -->
+            <circle cx="300" cy="200" r="30" fill="#FCBF49"/>
+            <circle cx="300" cy="200" r="22" stroke="#E5A93B" stroke-width="2" fill="none"/>
+          `;
+        }
+      },
+      {
+        id: "id_colombia",
+        code: "CO",
+        name_id: "Kolombia",
+        name_en: "Colombia",
+        continent: "america",
+        emoji: "🇨🇴",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="200" fill="#FCD116"/>
+            <rect y="200" width="600" height="100" fill="#003893"/>
+            <rect y="300" width="600" height="100" fill="#CE1126"/>
+          `;
+        }
+      },
+      {
+        id: "id_peru",
+        code: "PE",
+        name_id: "Peru",
+        name_en: "Peru",
+        continent: "america",
+        emoji: "🇵🇪",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="200" height="400" fill="#D91414"/>
+            <rect x="200" width="200" height="400" fill="#FFFFFF"/>
+            <rect x="400" width="200" height="400" fill="#D91414"/>
+          `;
+        }
+      },
+      // AFRICA & OTHER
+      {
+        id: "id_south_africa",
+        code: "ZA",
+        name_id: "Afrika Selatan",
+        name_en: "South Africa",
+        continent: "africa",
+        emoji: "🇿🇦",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="200" fill="#E03C31"/>
+            <rect y="200" width="600" height="200" fill="#001489"/>
+            <!-- Pall pall green Y layout -->
+            <path d="M 0,0 L 200,200 L 0,400" stroke="#FFFFFF" stroke-width="80" fill="none"/>
+            <path d="M 0,0 L 200,200 L 0,400" stroke="#007A4D" stroke-width="50" fill="none"/>
+            <rect y="170" width="600" height="60" fill="#007A4D"/>
+            <polygon points="0,50 150,200 0,350" fill="#000000"/>
+            <polygon points="0,50 150,200 0,350" stroke="#FFB81C" stroke-width="15" fill="none"/>
+          `;
+        }
+      },
+      {
+        id: "id_egypt",
+        code: "EG",
+        name_id: "Mesir",
+        name_en: "Egypt",
+        continent: "africa",
+        emoji: "🇪🇬",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="133.3" fill="#C8102E"/>
+            <rect y="133.3" width="600" height="133.3" fill="#FFFFFF"/>
+            <rect y="266.6" width="600" height="133.4" fill="#000000"/>
+            <!-- Eagle of Saladin -->
+            <polygon points="300,170 320,210 280,210" fill="#C09300"/>
+            <line x1="285" y1="200" x2="315" y2="200" stroke="#C09300" stroke-width="8"/>
+          `;
+        }
+      },
+      {
+        id: "id_nigeria",
+        code: "NG",
+        name_id: "Nigeria",
+        name_en: "Nigeria",
+        continent: "africa",
+        emoji: "🇳🇬",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="200" height="400" fill="#008751"/>
+            <rect x="200" width="200" height="400" fill="#FFFFFF"/>
+            <rect x="400" width="200" height="400" fill="#008751"/>
+          `;
+        }
+      },
+      {
+        id: "id_australia",
+        code: "AU",
+        name_id: "Australia",
+        name_en: "Australia",
+        continent: "africa",
+        emoji: "🇦🇺",
+        render: (svg) => {
+          svg.innerHTML = `
+            <rect width="600" height="400" fill="#00008B"/>
+            <!-- Mini Union Jack simulated lines -->
+            <rect width="200" height="133" fill="#00008B"/>
+            <line x1="0" y1="0" x2="200" y2="133" stroke="#FFFFFF" stroke-width="15"/>
+            <line x1="200" y1="0" x2="0" y2="133" stroke="#FFFFFF" stroke-width="15"/>
+            <line x1="0" y1="0" x2="200" y2="133" stroke="#FF0000" stroke-width="8"/>
+            <line x1="200" y1="0" x2="0" y2="133" stroke="#FF0000" stroke-width="8"/>
+            <rect x="90" width="20" height="133" fill="#FFFFFF"/>
+            <rect y="56" width="200" height="20" fill="#FFFFFF"/>
+            <rect x="94" width="12" height="133" fill="#FF0000"/>
+            <rect y="60" width="200" height="12" fill="#FF0000"/>
+            <!-- Large Federation Star -->
+            <polygon points="100,240 108,260 130,260 112,274 120,296 100,282 80,296 88,274 70,260 92,260" fill="#FFFFFF"/>
+            <!-- Star dots of Southern Cross on right -->
+            <circle cx="450" cy="100" r="10" fill="#FFFFFF"/>
+            <circle cx="500" cy="180" r="10" fill="#FFFFFF"/>
+            <circle cx="450" cy="260" r="10" fill="#FFFFFF"/>
+            <circle cx="400" cy="200" r="10" fill="#FFFFFF"/>
+          `;
+        }
+      }
+    ];
+
+    // --- 3. WEB AUDIO RETRO SOUND SYNTHESIZER ---
+    const SoundEngine = {
+      ctx: null,
+      enabled: true,
+
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      },
+
+      playCorrect() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        
+        // Note 1 (E5)
+        const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(659.25, now); // E5
+        gain1.gain.setValueAtTime(0.15, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        
+        osc1.connect(gain1);
+        gain1.connect(this.ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.15);
+
+        // Note 2 (A5) played shortly after
+        const osc2 = this.ctx.createOscillator();
+        const gain2 = this.ctx.createGain();
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(880.00, now + 0.08); // A5
+        gain2.gain.setValueAtTime(0.15, now + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        osc2.connect(gain2);
+        gain2.connect(this.ctx.destination);
+        osc2.start(now + 0.08);
+        osc2.stop(now + 0.3);
+      },
+
+      playIncorrect() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+
+        // Buzz/Harsh Sound
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      },
+
+      playTick() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(1200, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      },
+
+      playFanfare() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+          gain.gain.setValueAtTime(0.15, now + (idx * 0.1));
+          gain.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.1) + 0.3);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + (idx * 0.1));
+          osc.stop(now + (idx * 0.1) + 0.3);
+        });
+      }
+    };
+
+    // --- 4. GAME ENGINE ARCHITECTURE & STATE ---
+    const AppState = {
+      lang: "id",
+      sfx: true,
+      score: 0,
+      currentQuestionIdx: 0,
+      streak: 0,
+      bestStreak: 0,
+      correctAnswersCount: 0,
+      totalQuestions: 10,
+      activeTimer: null,
+      timeLeft: 200, // 20.0 seconds stored as tenths (deciseconds)
+      activeFlagsList: [],
+      currentFlag: null,
+      unlockedBadges: [], // Array of discovered flag IDs
+      currentMode: "mixed" // 'mixed' or specific continent id
+    };
+
+    // DOM Selection Cache
+    const screens = {
+      landing: document.getElementById('screen-landing'),
+      continent: document.getElementById('screen-continent'),
+      game: document.getElementById('screen-game'),
+      ranking: document.getElementById('screen-ranking'),
+      collection: document.getElementById('screen-collection'),
+      settings: document.getElementById('screen-settings'),
+      gameover: document.getElementById('screen-gameover')
+    };
+
+    // --- 5. INITIALIZATION & NAVIGATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadProgress();
+      applyI18n();
+      initEventListeners();
+      setupContinentSelectionGrid();
+    });
+
+    function navigateTo(screenId) {
+      // Deactivate all screens
+      Object.keys(screens).forEach(key => {
+        screens[key].classList.remove('active');
+      });
+      // Activate target
+      screens[screenId].classList.add('active');
+      // Scroll to top
+      screens[screenId].scrollTop = 0;
+
+      // Stop any background timer when leaving the game screen
+      if (screenId !== 'game') {
+        clearInterval(AppState.activeTimer);
+      }
+
+      // Contextual refresh hooks
+      if (screenId === 'ranking') {
+        renderLeaderboard();
+      } else if (screenId === 'collection') {
+        renderCollectionsGrid();
+      }
+    }
+
+    function initEventListeners() {
+      // Main CTA Game Play button defaults to Mixed random
+      document.getElementById('main-play-btn').addEventListener('click', () => {
+        startNewGameSession("mixed");
+      });
+
+      // Menu Cards routing
+      document.getElementById('card-mixed').addEventListener('click', () => {
+        startNewGameSession("mixed");
+      });
+      document.getElementById('card-continent').addEventListener('click', () => {
+        navigateTo('continent');
+      });
+      document.getElementById('card-rank').addEventListener('click', () => {
+        navigateTo('ranking');
+      });
+      document.getElementById('card-collection').addEventListener('click', () => {
+        navigateTo('collection');
+      });
+      document.getElementById('card-settings').addEventListener('click', () => {
+        navigateTo('settings');
+      });
+
+      // Settings controls
+      document.getElementById('toggle-sfx').addEventListener('change', (e) => {
+        AppState.sfx = e.target.checked;
+        SoundEngine.enabled = AppState.sfx;
+        saveProgress();
+      });
+      document.getElementById('select-game-language').addEventListener('change', (e) => {
+        AppState.lang = e.target.value;
+        applyI18n();
+        saveProgress();
+      });
+      document.getElementById('reset-progress-btn').addEventListener('click', () => {
+        if (confirm("Reset seluruh data & badge permainan?")) {
+          localStorage.clear();
+          loadProgress();
+          applyI18n();
+          showToast(i18n[AppState.lang].notifReset);
+          navigateTo('landing');
+        }
+      });
+
+      // Exit game gameplay button
+      document.getElementById('exit-game-btn').addEventListener('click', () => {
+        if (confirm(i18n[AppState.lang].exitConfirm)) {
+          navigateTo('landing');
+        }
+      });
+
+      // Global "Kembali" back buttons class binding
+      document.querySelectorAll('.back-to-home').forEach(btn => {
+        btn.addEventListener('click', () => navigateTo('landing'));
+      });
+
+      // Clear leaderboard button
+      document.getElementById('clear-leaderboard-btn').addEventListener('click', () => {
+        if (confirm("Reset semua catatan di papan peringkat?")) {
+          localStorage.removeItem('flagrush_scores');
+          renderLeaderboard();
+        }
+      });
+
+      // GameOver interaction buttons
+      document.getElementById('go-save-btn').addEventListener('click', savePlayerScore);
+      document.getElementById('go-retry-btn').addEventListener('click', () => {
+        startNewGameSession(AppState.currentMode);
+      });
+    }
+
+    // --- 6. LOCALIZATION CONTROLLER ---
+    function applyI18n() {
+      const dic = i18n[AppState.lang];
+      
+      // Update landing page
+      document.getElementById('landing-subtitle').innerHTML = dic.subtitle;
+      document.getElementById('main-play-btn').textContent = dic.playBtn;
+      document.getElementById('menu-mixed-title').textContent = dic.mixedTitle;
+      document.getElementById('menu-mixed-desc').textContent = dic.mixedDesc;
+      document.getElementById('menu-continent-title').textContent = dic.contTitle;
+      document.getElementById('menu-continent-desc').textContent = dic.contDesc;
+      document.getElementById('menu-rank-title').textContent = dic.rankTitle;
+      document.getElementById('menu-rank-desc').textContent = dic.rankDesc;
+      document.getElementById('menu-collect-title').textContent = dic.collectTitle;
+      document.getElementById('menu-collect-desc').textContent = dic.collectDesc;
+      document.getElementById('menu-set-title').textContent = dic.setTitle;
+      document.getElementById('menu-set-desc').textContent = dic.setDesc;
+
+      // Update Setup continent title
+      document.getElementById('screen-title-continent').textContent = dic.pilihWilayah;
+
+      // Update Game HUD labels
+      document.getElementById('hud-score').textContent = dic.hudScore;
+      document.getElementById('hud-question').textContent = dic.hudQuest;
+      document.getElementById('hud-streak').textContent = dic.hudStreak;
+
+      // Update Settings page
+      document.getElementById('set-screen-title').textContent = dic.setTitle;
+      document.getElementById('set-sound-lbl').textContent = dic.setSound;
+      document.getElementById('set-sound-desc').textContent = dic.setSoundDesc;
+      document.getElementById('set-lang-lbl').textContent = dic.setLang;
+      document.getElementById('set-lang-desc').textContent = dic.setLangDesc;
+      document.getElementById('reset-progress-btn').textContent = dic.resetProg;
+
+      // Update Ranking page
+      document.getElementById('rank-title').textContent = dic.papanPeringkat;
+
+      // Update Collections header title
+      document.getElementById('collect-title').textContent = dic.koleksiBadge;
+
+      // Update Gameover Labels
+      document.getElementById('gameover-title-text').textContent = dic.goTitle;
+      document.getElementById('gameover-subtitle').textContent = dic.goSub;
+      document.getElementById('go-score').textContent = dic.hudScore;
+      document.getElementById('go-streak').textContent = dic.bestStreak || dic.hudStreak;
+      document.getElementById('go-acc').textContent = "Akurasi";
+      document.getElementById('label-name-input').textContent = dic.labelName;
+      document.getElementById('go-save-btn').textContent = dic.goSave;
+      document.getElementById('go-retry-btn').textContent = dic.goRetry;
+
+      // Synchronize input elements with saved status
+      document.getElementById('select-game-language').value = AppState.lang;
+      document.getElementById('toggle-sfx').checked = AppState.sfx;
+
+      // Dynamic list regeneration of regions if opened
+      setupContinentSelectionGrid();
+    }
+
+    // --- 7. CONTINENT/REGION SELECTION BUILDER ---
+    function setupContinentSelectionGrid() {
+      const container = document.getElementById('continent-grid-container');
+      container.innerHTML = "";
+
+      const dic = i18n[AppState.lang];
+      const continents = [
+        { id: "mixed", emoji: "🌎", title: dic.mixedTitle, desc: dic.mixedDesc },
+        { id: "europe", emoji: "🇪🇺", title: dic.conEurope, desc: "Belanda, Prancis, Jerman, dll." },
+        { id: "asia", emoji: "🌏", title: dic.conAsia, desc: "Indonesia, Jepang, Korea Selatan, dll." },
+        { id: "america", emoji: "🇺🇸", title: dic.conAmerica, desc: "Amerika Serikat, Kanada, Brasil, dll." },
+        { id: "africa", emoji: "🇿🇦", title: dic.conAfrica, desc: "Afrika Selatan, Mesir, Nigeria, dll." }
+      ];
+
+      continents.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "continent-card";
+        div.innerHTML = `
+          <div class="continent-icon">${item.emoji}</div>
+          <div class="continent-info">
+            <h3>${item.title}</h3>
+            <p>${item.desc}</p>
+          </div>
+        `;
+        div.addEventListener('click', () => {
+          startNewGameSession(item.id);
+        });
+        container.appendChild(div);
+      });
+    }
+
+    // --- 8. GAMEPLAY CONTROLLER ENGINE ---
+    function startNewGameSession(mode) {
+      AppState.currentMode = mode;
+      AppState.score = 0;
+      AppState.currentQuestionIdx = 0;
+      AppState.streak = 0;
+      AppState.bestStreak = 0;
+      AppState.correctAnswersCount = 0;
+
+      // Compile questions subset based on chosen mode filter
+      let subset = [];
+      if (mode === "mixed") {
+        subset = [...FLAGS_DB];
+      } else {
+        subset = FLAGS_DB.filter(item => item.continent === mode);
+      }
+
+      // Shuffle array dynamically
+      AppState.activeFlagsList = subset.sort(() => Math.random() - 0.5);
+      
+      // Limit to 10 questions maximum
+      if (AppState.activeFlagsList.length > 10) {
+        AppState.activeFlagsList = AppState.activeFlagsList.slice(0, 10);
+      }
+      AppState.totalQuestions = AppState.activeFlagsList.length;
+
+      // Navigate to Game Arena Screen
+      navigateTo('game');
+      document.getElementById('game-nav-mode').textContent = mode === "mixed" ? "Mixed Mode" : mode.toUpperCase();
+
+      loadNextQuestion();
+    }
+
+    function loadNextQuestion() {
+      if (AppState.currentQuestionIdx >= AppState.totalQuestions) {
+        endGameSession();
+        return;
+      }
+
+      // Prepare UI states
+      const flagContainer = document.getElementById('main-flag-container');
+      flagContainer.className = "flag-card"; // remove correct/incorrect pulse animations
+      
+      const hudScore = document.getElementById('hud-score-val');
+      const hudQuest = document.getElementById('hud-question-val');
+      const hudStreak = document.getElementById('hud-streak-val');
+
+      hudScore.textContent = AppState.score;
+      hudQuest.textContent = `${AppState.currentQuestionIdx + 1}/${AppState.totalQuestions}`;
+      hudStreak.textContent = `${AppState.streak}🔥`;
+
+      // Assign Active Question Flag
+      AppState.currentFlag = AppState.activeFlagsList[AppState.currentQuestionIdx];
+
+      // Draw SVG Flag inside target container
+      const svgView = document.getElementById('flag-svg-view');
+      svgView.innerHTML = '';
+      AppState.currentFlag.render(svgView);
+
+      // Construct multiple choices
+      generateChoiceOptions();
+
+      // Initiate countdown timer
+      resetAndStartTimer();
+    }
+
+    function generateChoiceOptions() {
+      const container = document.getElementById('answers-grid');
+      container.innerHTML = "";
+
+      const currentLangKey = AppState.lang === 'id' ? 'name_id' : 'name_en';
+      const correctAnswerName = AppState.currentFlag[currentLangKey];
+
+      // Grab candidates excluding the correct answer
+      let possibleDistractors = FLAGS_DB.filter(item => item.id !== AppState.currentFlag.id);
+      possibleDistractors = possibleDistractors.sort(() => Math.random() - 0.5);
+
+      // Select 3 distractors
+      const distractors = possibleDistractors.slice(0, 3).map(item => item[currentLangKey]);
+
+      // Combine and shuffle choices
+      const choicesList = [correctAnswerName, ...distractors].sort(() => Math.random() - 0.5);
+
+      choicesList.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = "option-btn";
+        btn.textContent = choice;
+        btn.addEventListener('click', () => handleAnswerSubmission(btn, choice));
+        container.appendChild(btn);
+      });
+    }
+
+    function resetAndStartTimer() {
+      clearInterval(AppState.activeTimer);
+      AppState.timeLeft = 200; // 20.0 seconds
+      updateTimerBarUI();
+
+      AppState.activeTimer = setInterval(() => {
+        AppState.timeLeft--;
+        updateTimerBarUI();
+
+        // Warning retro sound every second on critical time left
+        if (AppState.timeLeft <= 50 && AppState.timeLeft % 10 === 0 && AppState.timeLeft > 0) {
+          SoundEngine.playTick();
+        }
+
+        if (AppState.timeLeft <= 0) {
+          clearInterval(AppState.activeTimer);
+          handleTimeOutSubmission();
+        }
+      }, 100); // refresh every tenth of a second for extreme progress bar smoothness
+    }
+
+    function updateTimerBarUI() {
+      const bar = document.getElementById('game-timer-bar');
+      const percent = (AppState.timeLeft / 200) * 100;
+      bar.style.width = `${percent}%`;
+
+      if (AppState.timeLeft <= 60) {
+        bar.classList.add('warning');
+      } else {
+        bar.classList.remove('warning');
+      }
+    }
+
+    function handleAnswerSubmission(selectedBtn, answerText) {
+      clearInterval(AppState.activeTimer);
+      
+      // Prevent double taps on options
+      disableAllOptionButtons();
+
+      const currentLangKey = AppState.lang === 'id' ? 'name_id' : 'name_en';
+      const correctText = AppState.currentFlag[currentLangKey];
+
+      const flagContainer = document.getElementById('main-flag-container');
+
+      if (answerText === correctText) {
+        // CORRECT
+        selectedBtn.classList.add('correct');
+        flagContainer.classList.add('pop-correct');
+        SoundEngine.playCorrect();
+
+        // Increment stats
+        AppState.correctAnswersCount++;
+        AppState.streak++;
+        if (AppState.streak > AppState.bestStreak) {
+          AppState.bestStreak = AppState.streak;
+        }
+
+        // Timer modifier reward: Faster answer = more raw score points
+        const speedBonus = Math.floor(AppState.timeLeft / 10);
+        const streakMultiplier = Math.min(Math.floor(AppState.streak / 3), 3); // cap multiplier bonus to 3x
+        const roundPoints = (100 + (speedBonus * 10)) * (1 + streakMultiplier);
+
+        AppState.score += roundPoints;
+
+        // Unlock Badge permanently
+        unlockBadge(AppState.currentFlag.id);
+
+      } else {
+        // INCORRECT
+        selectedBtn.classList.add('incorrect');
+        flagContainer.classList.add('shake');
+        SoundEngine.playIncorrect();
+
+        // Highlight correct button visually
+        highlightCorrectOptionButton();
+
+        // Reset streak
+        AppState.streak = 0;
+      }
+
+      // Transition to next after delay
+      setTimeout(() => {
+        AppState.currentQuestionIdx++;
+        loadNextQuestion();
+      }, 1500);
+    }
+
+    function handleTimeOutSubmission() {
+      disableAllOptionButtons();
+      const flagContainer = document.getElementById('main-flag-container');
+      flagContainer.classList.add('shake');
+      SoundEngine.playIncorrect();
+
+      highlightCorrectOptionButton();
+      AppState.streak = 0;
+
+      // Transition to next after delay
+      setTimeout(() => {
+        AppState.currentQuestionIdx++;
+        loadNextQuestion();
+      }, 1500);
+    }
+
+    function disableAllOptionButtons() {
+      const btns = document.querySelectorAll('.option-btn');
+      btns.forEach(btn => btn.classList.add('disabled'));
+    }
+
+    function highlightCorrectOptionButton() {
+      const btns = document.querySelectorAll('.option-btn');
+      const currentLangKey = AppState.lang === 'id' ? 'name_id' : 'name_en';
+      const correctText = AppState.currentFlag[currentLangKey];
+
+      btns.forEach(btn => {
+        if (btn.textContent === correctText) {
+          btn.classList.add('correct');
+        }
+      });
+    }
+
+    // --- 9. GAME OVER & PROGRESS HANDLING ---
+    function endGameSession() {
+      navigateTo('gameover');
+      SoundEngine.playFanfare();
+
+      // UI stats rendering
+      document.getElementById('go-score-val').textContent = AppState.score;
+      document.getElementById('go-streak-val').textContent = `${AppState.bestStreak}🔥`;
+      
+      const accuracy = AppState.totalQuestions > 0 
+        ? Math.round((AppState.correctAnswersCount / AppState.totalQuestions) * 100) 
+        : 0;
+      document.getElementById('go-acc-val').textContent = `${accuracy}%`;
+
+      // Check if this matches high score locally
+      const storedHigh = parseInt(localStorage.getItem('flagrush_highscore') || '0', 10);
+      const isNewHighScore = AppState.score > storedHigh;
+
+      const newHighBadge = document.getElementById('new-highscore-badge');
+      if (isNewHighScore && AppState.score > 0) {
+        newHighBadge.style.display = "block";
+        localStorage.setItem('flagrush_highscore', AppState.score.toString());
+      } else {
+        newHighBadge.style.display = "none";
+      }
+
+      saveProgress();
+    }
+
+    function savePlayerScore() {
+      const nameInput = document.getElementById('player-name-field');
+      const nameValue = nameInput.value.trim() || "Pemain";
+
+      if (!nameValue) {
+        showToast(i18n[AppState.lang].notifNoName);
+        return;
+      }
+
+      // Compile data
+      const newRecord = {
+        name: nameValue,
+        score: AppState.score,
+        mode: AppState.currentMode,
+        timestamp: new Date().toLocaleDateString(),
+        acc: document.getElementById('go-acc-val').textContent
+      };
+
+      // Retrieve existing
+      let savedScores = JSON.parse(localStorage.getItem('flagrush_scores') || '[]');
+      savedScores.push(newRecord);
+
+      // Sort scores high to low
+      savedScores.sort((a, b) => b.score - a.score);
+
+      // Slice top 10 scores
+      savedScores = savedScores.slice(0, 10);
+
+      localStorage.setItem('flagrush_scores', JSON.stringify(savedScores));
+      showToast(i18n[AppState.lang].notifSaved);
+
+      // Navigate straight to ranking screen
+      navigateTo('ranking');
+    }
+
+    // --- 10. LEADERBOARD RENDERING ---
+    function renderLeaderboard() {
+      const container = document.getElementById('leaderboard-list');
+      container.innerHTML = "";
+
+      const scores = JSON.parse(localStorage.getItem('flagrush_scores') || '[]');
+
+      if (scores.length === 0) {
+        container.innerHTML = `<div class="rank-empty">${i18n[AppState.lang].noRank}</div>`;
+        return;
+      }
+
+      scores.forEach((entry, idx) => {
+        let rankClass = "other";
+        if (idx === 0) rankClass = "gold";
+        else if (idx === 1) rankClass = "silver";
+        else if (idx === 2) rankClass = "bronze";
+
+        const div = document.createElement('div');
+        div.className = "rank-item";
+        div.innerHTML = `
+          <div class="rank-left">
+            <div class="rank-number ${rankClass}">${idx + 1}</div>
+            <div>
+              <div class="rank-name">${escapeHTML(entry.name)}</div>
+              <div class="rank-meta">${entry.timestamp} • Mode: ${entry.mode.toUpperCase()}</div>
+            </div>
+          </div>
+          <div class="rank-right">
+            <div class="rank-score">${entry.score} pts</div>
+            <div class="rank-meta" style="font-size: 10px;">Akurasi: ${entry.acc}</div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // --- 11. BADGE ACHIEVEMENT TRACKER ---
+    function unlockBadge(flagId) {
+      if (!AppState.unlockedBadges.includes(flagId)) {
+        AppState.unlockedBadges.push(flagId);
+        saveProgress();
+      }
+    }
+
+    function renderCollectionsGrid() {
+      const container = document.getElementById('badges-grid-container');
+      container.innerHTML = "";
+
+      const summaryText = document.getElementById('badge-ratio-text');
+      const totalAvailable = FLAGS_DB.length;
+      const unlockedCount = AppState.unlockedBadges.length;
+
+      // Update dynamic counter text with translation fallback
+      let rawFormat = i18n[AppState.lang].badgeRatio;
+      rawFormat = rawFormat.replace('{unlocked}', unlockedCount).replace('{total}', totalAvailable);
+      summaryText.textContent = rawFormat;
+
+      FLAGS_DB.forEach(item => {
+        const isUnlocked = AppState.unlockedBadges.includes(item.id);
+        const card = document.createElement('div');
+        card.className = `badge-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+
+        const flagName = AppState.lang === 'id' ? item.name_id : item.name_en;
+
+        card.innerHTML = `
+          <div class="badge-flag">${isUnlocked ? item.emoji : '🔒'}</div>
+          <div class="badge-name">${isUnlocked ? flagName : '???'}</div>
+          <div class="badge-status ${isUnlocked ? 'unlocked-txt' : 'locked-txt'}">
+            ${isUnlocked ? i18n[AppState.lang].badgeStatusUnlock : i18n[AppState.lang].badgeStatusLock}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // --- 12. PERSISTENT STORAGE CONTROLLER ---
+    function saveProgress() {
+      const data = {
+        lang: AppState.lang,
+        sfx: AppState.sfx,
+        badges: AppState.unlockedBadges
+      };
+      localStorage.setItem('flagrush_v1_userdata', JSON.stringify(data));
+    }
+
+    function loadProgress() {
+      const raw = localStorage.getItem('flagrush_v1_userdata');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          AppState.lang = parsed.lang || "id";
+          AppState.sfx = parsed.sfx !== undefined ? parsed.sfx : true;
+          AppState.unlockedBadges = parsed.badges || [];
+          SoundEngine.enabled = AppState.sfx;
+        } catch(e) {
+          console.error("Failed to load user progress data.", e);
+        }
+      }
+    }
+
+    // --- 13. UTILITY FUNCTIONS ---
+    function showToast(message) {
+      const toast = document.getElementById('global-toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+  </script>
+
+</body>
+</html>
